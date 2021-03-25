@@ -1,4 +1,5 @@
 <template>
+  <div class="chatApp" v-cloak>
     <main>
       <header>
         <div>Chat</div>
@@ -62,17 +63,31 @@
           </article>
           <nav>
             <ul class="top">
-              <li class="article"><a href="#">Online</a></li>
-              <li><a href="#">All</a></li>
+              <li
+                v-for="item in menu"
+                :key="item.text"
+                :class="{ active: item.isSelect }"
+                @click="selectMenu(item)"
+              >
+                <a
+                >
+                  <strong>{{item.text}}</strong>
+                </a>
+              </li>
               <!-- <li><a href="#">Chats</a></li> -->
             </ul>
             <ul class="list">
               <li 
-                v-for="user in users"
+                v-for="user in filteredUserList"
                 :key="user.id"
-                :class="{ active: selectedUser.id === user.id }"
+                :class="{ 
+                  active: selectedUser.id === user.id,
+                  online: user.status === 'Online'
+                 }"
+                @click.prevent="selectChat(user)"
               >
-                <a href="#" @click.prevent="selectChat(user)">
+                <a href="#"
+                >
                   <img :src="user.avatar" :alt="user.name" />
                   <div>
                     <div>
@@ -85,9 +100,10 @@
                 </a>
               </li>
             </ul>
-            <div class="buttom">
+            <div class="bottom">
               <input
                 type="text"
+                v-model="filterParams.string"
                 placeholder="Search"
               />
             </div>
@@ -95,6 +111,7 @@
         </div>
       </section>
     </main>
+  </div>
     <!-- <div class="messager">
       <h1 class="user">
         Current User {{user}}
@@ -141,6 +158,7 @@
 
 <script>
 import './styles/my.css'
+import './styles/cloak.css'
 export default {
   name: 'App',
   components: {
@@ -153,8 +171,33 @@ export default {
     messages: [],
     users: [],
     text: '',
-    description: 'Send message to '
+    description: 'Send message to ',
+    filterParams: {
+      status: '',
+      string: '',
+    },
+    menu: [
+      {
+        text: 'Online',
+        isSelect: false,
+      }, 
+      {
+        text: 'All',
+        isSelect: false,
+      },
+    ],
   }),
+  computed: {
+    filteredUserList: function() {
+      const newList = this.users.filter((el) =>
+        el.status.startsWith(this.filterParams.status)
+        &&
+        el.name.toLowerCase()
+          .includes(this.filterParams.string.toLowerCase())
+      );
+      return newList;
+    }
+  },
   sockets: {
     connect: function () {
       console.log('socket connected')
@@ -165,6 +208,7 @@ export default {
       localStorage.setItem('user', JSON.stringify(this.user));
     },
     getUsers(usersArr) {
+      // this.setUsersList(usersArr); 
       this.users = [...usersArr.filter(user => user.id != this.user.id)];
     },
     updateUserStatus(user) {
@@ -217,6 +261,7 @@ export default {
         ovner: this.user,
       }
       this.$socket.emit('messageToServer', { msg: newMsg, chatId: this.chatId })
+      this.text = '';
     },
     selectChat(user) {
       this.selectedUser = { ...user };
@@ -227,18 +272,31 @@ export default {
         this.chatId = chatId
         this.messages = msgs
       })
+    },
+    selectMenu(item) {
+      this.filterParams.status = (item.text === 'All')? '': item.text;
+      this.menu.forEach((el) => {
+          console.log(el);
+          el.isSelect = (item === el)? true : false
+        })
+    },
+    // setUsersList(usersArr) {
+    //   this.users = [...usersArr.filter(user => user.id != this.user.id)];
+    // },
+    test(ee){
+      console.log(' - ee:280 >', ee); // eslint-disable-line no-console
     }
   },
 }
 </script>
 
 <style>
-#app {
+/* #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
-}
+} */
 </style>
