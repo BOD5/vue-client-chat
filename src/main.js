@@ -2,15 +2,16 @@ import Vue from 'vue'
 import App from './App.vue'
 import VueSocketIO from 'vue-socket.io'
 
+Vue.filter('formatDate', (d) => {
+  if (d) {
+    return d.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })
+  }
+  return d
+})
+
 Vue.use(new VueSocketIO({
   debug: true,
   connection: 'http://localhost:5000/chat',
-  // vuex: {
-  //     store,
-  //     actionPrefix: 'SOCKET_',
-  //     mutationPrefix: 'SOCKET_'
-  // },
-  // options: { path: "/my-app/" } //Optional options
 }))
 
 Vue.config.productionTip = false

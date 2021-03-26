@@ -34,21 +34,25 @@
                 >
                   <div class="chat-title">
                     {{ msg.ovner.name }}
-                    <span>{{ msg.created | formatDate }}</span>
+                    <span>{{ new Date(msg.created) | formatDate }}</span>
                   </div>
                   <div class="chat-msg">
                     {{ msg.text }}
                   </div>
                 </li>
               </ul>
+              <h3>{{ uStatusWrite }}</h3>
             </div>
             <footer>
+              
               <div class="col col-1">
                 <input
                   v-model="text"
                   type="text"
                   autofocus
                   placeholder="Start chating!"
+                  @keyup="inputListener"
+                  @keyup.enter="sendMessage()"
                 />
               </div>
               <div class="col col-2">
@@ -112,48 +116,6 @@
       </section>
     </main>
   </div>
-    <!-- <div class="messager">
-      <h1 class="user">
-        Current User {{user}}
-      </h1>
-      <h1 class="user">
-        Chat whith User {{selectedUser}}
-      </h1>
-      <section class="chat">
-        <div class="chatMessages">
-          <ul>
-            <li
-              v-for="msg of messages"
-              :key="msg.id"
-            >
-              <div class="message">
-                {{ msg }}
-              </div>
-            </li>
-          </ul>
-        </div>
-        <form action="">
-          <input v-model="text" type="text"/>
-          <button type="submit" @click.prevent="sendMessage()">Send Message</button>
-        </form>
-        <div class="chatsList">
-          <ul>
-            <li
-              v-for="user of users"
-              :key="user.id"
-            >
-              <button class="selectUserToChat" @click.prevent="selectChat(user)">
-                <div class="userInfo">
-                  {{ user }}
-                </div>
-              </button>
-            </li>
-          </ul>
-          
-        </div>
-      </section>
-    </div> -->
-  <!-- </div> -->
 </template>
 
 <script>
@@ -186,9 +148,13 @@ export default {
         isSelect: false,
       },
     ],
+    uStatusWrite: '',
   }),
   computed: {
     filteredUserList: function() {
+      console.log(' - this.users:202 >', this.users); // eslint-disable-line no-console
+      console.log(' - this.filterParams.string:193 >', this.filterParams.string); // eslint-disable-line no-console
+      try {
       const newList = this.users.filter((el) =>
         el.status.startsWith(this.filterParams.status)
         &&
@@ -196,10 +162,14 @@ export default {
           .includes(this.filterParams.string.toLowerCase())
       );
       return newList;
+      } catch (e) {
+        console.log(' - e:201 >', e); // eslint-disable-line no-console
+        return null;
+      }
     }
   },
   sockets: {
-    connect: function () {
+    connect: async function () {
       console.log('socket connected')
     },
     //Users emit listeners
@@ -247,6 +217,12 @@ export default {
       else
         this.messages.push(msg);
     },
+    listenWrite({ uId }) {
+      this.uStatusWrite = `${this.users.find(u => u.id === uId).name} is writing`
+      setTimeout(() => {
+        this.uStatusWrite = ''
+      }, 1000);
+    },
     getChatsLastMsg() {
 
     },
@@ -254,7 +230,10 @@ export default {
 
     }
   },
-  methods: {
+  methods: {    
+    inputListener() {
+      this.$socket.emit('userWriteMsg', { uId: this.user.id, chatId: this.chatId })
+    },
     sendMessage()  {
       const newMsg = {
         text: this.text,
@@ -265,9 +244,7 @@ export default {
     },
     selectChat(user) {
       this.selectedUser = { ...user };
-      //receive chat messages from server
       this.$socket.emit('chatFromServer', [ this.user.id, this.selectedUser.id ], (response) => {
-        console.log(' - response:134 >', response); // eslint-disable-line no-console
         const {chatId, msgs} = response
         this.chatId = chatId
         this.messages = msgs
@@ -280,12 +257,6 @@ export default {
           el.isSelect = (item === el)? true : false
         })
     },
-    // setUsersList(usersArr) {
-    //   this.users = [...usersArr.filter(user => user.id != this.user.id)];
-    // },
-    test(ee){
-      console.log(' - ee:280 >', ee); // eslint-disable-line no-console
-    }
   },
 }
 </script>

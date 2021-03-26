@@ -163,6 +163,15 @@ footer {
   min-height: 200px;
   height: calc(100vh - 170px);
 }
+
+#chat-content h3 {
+  padding: 0;
+
+  width: 100%;
+  text-align: center;
+  color: gray;
+}
+
 /* #chat-content div {
   background-color: #28282a;
 } */
