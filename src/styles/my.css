@@ -72,7 +72,7 @@ nav ul.top li:not(.active) {
 
 
 li.active {
-  background-color: green;
+  background-color: lightblue;
 }
 
 nav ul.list {

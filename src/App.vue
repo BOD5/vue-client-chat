@@ -165,9 +165,17 @@ export default {
       }
     }
   },
+  created() {
+    console.log(' - this.user:169 >', this.user); // eslint-disable-line no-console
+  },
   sockets: {
     connect: async function () {
       console.log('socket connected')
+      // console.log(' - this.user:172 >', this.user); // eslint-disable-line no-console
+      // if (Object.keys(this.user).length == 0){
+      //   console.log(' - this.$sockets:174 >', this.sockets); // eslint-disable-line no-console
+      //   this.$socket.emit('getDataForClien');
+      // }
     },
     //Users emit listeners
     getUser(newUser) {
@@ -206,7 +214,12 @@ export default {
       if (localStorage.selectMenu && localStorage.selectMenu !== 'null') {
         this.selectMenu(JSON.parse(localStorage.selectMenu))
       }
-      if (localStorage.selectMenu && localStorage.selectMenu !== 'null') this.selectedUser = JSON.parse(localStorage.selectedUser);
+      if (localStorage.selectedUser && localStorage.selectedUser !== 'null') {
+        const user = JSON.parse(localStorage.selectedUser);
+        this.selectChat(user);
+        // else localStorage.clear('selectedUser');
+      }
+      console.log(' - this.chatId:214 >', this.chatId); // eslint-disable-line no-console
     },
     ////
     //messages emit listeners
@@ -218,6 +231,7 @@ export default {
         this.messages.push(msg);
     },
     listenWrite({ uId, isWrite }) {
+      console.log(' - 123:226 >', 123); // eslint-disable-line no-console
       this.uStatusWrite = !isWrite ? '': (
         `${this.users.find(u => u.id === uId).name} is writing`
       )
@@ -231,6 +245,7 @@ export default {
   },
   methods: {    
     inputListener() {
+      console.log(' - { uId: this.user.id, chatId: this.chatId }:240 >', { uId: this.user.id, chatId: this.chatId }); // eslint-disable-line no-console
       this.$socket.emit('userWriteMsg', { uId: this.user.id, chatId: this.chatId })
     },
     sendMessage()  {
@@ -238,6 +253,7 @@ export default {
         text: this.text,
         ovner: this.user,
       }
+      console.log(' - newMsg:246 >', newMsg); // eslint-disable-line no-console
       this.$socket.emit('messageToServer', { msg: newMsg, chatId: this.chatId })
       this.text = '';
     },
