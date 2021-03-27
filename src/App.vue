@@ -152,8 +152,6 @@ export default {
   }),
   computed: {
     filteredUserList: function() {
-      console.log(' - this.users:202 >', this.users); // eslint-disable-line no-console
-      console.log(' - this.filterParams.string:193 >', this.filterParams.string); // eslint-disable-line no-console
       try {
       const newList = this.users.filter((el) =>
         el.status.startsWith(this.filterParams.status)
@@ -163,7 +161,6 @@ export default {
       );
       return newList;
       } catch (e) {
-        console.log(' - e:201 >', e); // eslint-disable-line no-console
         return null;
       }
     }
@@ -206,22 +203,24 @@ export default {
         this.user = JSON.parse(localStorage.user);
         this.$socket.emit('checkUser', this.user);
       }
+      if (localStorage.selectMenu && localStorage.selectMenu !== 'null') {
+        this.selectMenu(JSON.parse(localStorage.selectMenu))
+      }
+      if (localStorage.selectMenu && localStorage.selectMenu !== 'null') this.selectedUser = JSON.parse(localStorage.selectedUser);
     },
     ////
     //messages emit listeners
     getMessage({msg, chatId}) {
-      console.log(' - chatId:109 >', chatId); // eslint-disable-line no-console
       if(this.chatId != chatId)
         // this.getChatMessages.chatId = msg;
         console.log(' - 11:108 >', 11); // eslint-disable-line no-console
       else
         this.messages.push(msg);
     },
-    listenWrite({ uId }) {
-      this.uStatusWrite = `${this.users.find(u => u.id === uId).name} is writing`
-      setTimeout(() => {
-        this.uStatusWrite = ''
-      }, 1000);
+    listenWrite({ uId, isWrite }) {
+      this.uStatusWrite = !isWrite ? '': (
+        `${this.users.find(u => u.id === uId).name} is writing`
+      )
     },
     getChatsLastMsg() {
 
@@ -249,13 +248,14 @@ export default {
         this.chatId = chatId
         this.messages = msgs
       })
+      localStorage.setItem('selectedUser', JSON.stringify(this.selectedUser));
     },
     selectMenu(item) {
       this.filterParams.status = (item.text === 'All')? '': item.text;
       this.menu.forEach((el) => {
-          console.log(el);
-          el.isSelect = (item === el)? true : false
+          el.isSelect = (item.text === el.text)? true : false
         })
+      localStorage.setItem('selectMenu', JSON.stringify(item));
     },
   },
 }
