@@ -169,11 +169,15 @@ export default {
       }
     },
   },
+  beforeDestroy () {
+    this.$socket.emit('epta');
+  },
   sockets: {
     connect: async function () {
       console.log('socket connected')
     },
     getUsers(usersArr) {
+      console.log(' - usersArr:180 >', usersArr); // eslint-disable-line no-console
       this.users = [...usersArr.filter(user => user.id !== this.user.id)];
     },
     updateUserStatus(user) {
@@ -241,9 +245,14 @@ export default {
       if (this.chatId === chatId) this.messages.forEach((m) => (m.id === msg.id)? msg: m)
     }
   },
+  mounted(){
+    // Clear the browser cache data in localStorage when closing the browser window
+    window.onbeforeunload = () => {
+      this.$socket.emit('userGoOffline', this.user);
+    }
+  },
   methods: {    
     inputListener() {
-      console.log(' - { uId: this.user.id, chatId: this.chatId }:240 >', { uId: this.user.id, chatId: this.chatId }); // eslint-disable-line no-console
       this.$socket.emit('userWriteMsg', { uId: this.user.id, chatId: this.chatId })
     },
     reading(msg) {
@@ -258,14 +267,12 @@ export default {
         text: this.text,
         ovner: this.user,
       }
-      console.log(' - newMsg:246 >', newMsg); // eslint-disable-line no-console
       this.$socket.emit('messageToServer', { msg: newMsg, chatId: this.chatId })
       this.text = '';
     },
     selectChat(user) {
       this.selectedUser = { ...user };
       this.$socket.emit('chatFromServer', [ this.user.id, this.selectedUser.id ], (response) => {
-        console.log(' - response:272 >', response); // eslint-disable-line no-console
         const {chatId, msgs} = response
         this.chatId = chatId
         this.messages = msgs
