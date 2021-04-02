@@ -6,7 +6,6 @@ import os from 'os';
 console.log(' - 123:6 >', 123); // eslint-disable-line no-console
 console.log(' - networkIntarfaces():8 >', os.networkInterfaces()); // eslint-disable-line no-console
 
-
 Vue.filter('formatDate', (d) => {
   if (d) {
     return d.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })
