@@ -98,7 +98,7 @@
                     <div>
                       <strong>{{ user.name }}</strong>
                       <div>
-                        description
+                        {{ statusChatInMenu(user) }}
                       </div>
                     </div>
                   </div>
@@ -137,7 +137,7 @@ export default {
     text: '',
     description: 'Send message to ',
     msgsPos: [],
-    userChat: {},
+    userChatId: {},
     filterParams: {
       status: '',
       string: '',
@@ -152,7 +152,8 @@ export default {
         isSelect: false,
       },
     ],
-    writes: [],
+    writes: {},
+    curentChatWrites: [],
   }),
   computed: {
     filteredUserList: function() {
@@ -165,18 +166,16 @@ export default {
           .includes(this.filterParams.string.toLowerCase())
         )
       );
-      console.log(' - newList:168 >', newList); // eslint-disable-line no-console
       return newList;
     },
     uStatusWrite: function() {
-      let res = ''
-      if (this.writes.length > 0) {
-        this.writes.forEach((id) => {
-            res += `${this.usersInChat.find((u) => u.id === id).name}, `
-        })
-        res += 'is typing'
-      }
-      console.log(' - res:180 >', res); // eslint-disable-line no-console
+      let res = '';
+      // if (this.curentChatWrites.length > 0) {
+      //   this.curentChatWrites.forEach((id) => {
+      //       res += `${this.usersInChat.find((u) => u.id === id).name}, `
+      //   })
+      //   res += 'is typing'
+      // }
       return res;
     },
   },
@@ -185,16 +184,13 @@ export default {
       console.log('socket connected')
     },
     getUsers(usersArr) {
-      console.log(' - usersArr:180 >', usersArr); // eslint-disable-line no-console
       this.users = usersArr.map((u) => {
-        this.userChat[`${u.user.id}`] = u.chatId
+        this.userChatId[`${u.user.id}`] = u.chatId
         return u.user
       });
-      // [...usersArr.filter(user => user.user.id !== this.user.id)];
+      [...usersArr.filter(user => user.user.id !== this.user.id)];
     },
     updateUserStatus(user) {
-      console.log(' - user:193 >', user); // eslint-disable-line no-console
-      console.log(' - this.user:193 >', this.user); // eslint-disable-line no-console
       if(user !== null && user.id !== this.user.id) {
         if(this.users.find((u) => u.id === user.id)) {
           this.users = this.users.map((u) => {
@@ -208,7 +204,6 @@ export default {
     },
     checkUser() {
       let user;
-      console.log(' - 123:192 >', 123); // eslint-disable-line no-console
       if(!localStorage.user || localStorage.user == 'null'){
         user = {
           name: `User ${Math.floor(Math.random() * Math.floor(100))}`,
@@ -219,55 +214,42 @@ export default {
         console.log('localstorage is empty');
       } else {
         user = JSON.parse(localStorage.user);
-        console.log(' - user:203 >', user); // eslint-disable-line no-console
       }
       this.$socket.emit('checkUser', user, ({user}) => {
-        console.log(' - che:207 >', user); // eslint-disable-line no-console
         this.user = user;
-        console.log(' - this.user:208 >', this.user); // eslint-disable-line no-console
         localStorage.setItem('user', JSON.stringify(this.user));
-      });
-      if (localStorage.selectMenu && localStorage.selectMenu !== 'null') {
-        this.selectMenu(JSON.parse(localStorage.selectMenu))
-      }
-      if (localStorage.selectedUser && localStorage.selectedUser !== 'null') {
-        const user = JSON.parse(localStorage.selectedUser);
-        console.log(' - user:235 >', user); // eslint-disable-line no-console
-        this.selectChat(user);
-        // else localStorage.clear('selectedUser');
-      }
-      console.log(' - this.chatId:214 >', this.chatId); // eslint-disable-line no-console
+        // shit
+        if (localStorage.selectMenu && localStorage.selectMenu !== 'null') {
+          this.selectMenu(JSON.parse(localStorage.selectMenu))
+        }
+        if (localStorage.selectedUser && localStorage.selectedUser !== 'null') {
+          const user = JSON.parse(localStorage.selectedUser);
+          this.selectChat(user);
+          // else localStorage.clear('selectedUser');
+        }
+      });      
     },
     ////
     //messages emit listeners
     getMessage({msg, chatId}) {
-      console.log(' - msg:238 >', msg); // eslint-disable-line no-console
-      if(this.chatId != chatId)
-        // this.getChatMessages.chatId = msg;
-        console.log(' - 11:108 >', 11); // eslint-disable-line no-console
-      else
+      if(this.chatId === chatId)
         this.messages.push(msg);
-      console.log(' - this.messages:246 >', this.messages); // eslint-disable-line no-console
+      this.chatsLastMsg[`${chatId}`] = msg;
     },
-    listenWrite({ writes }) {
-      console.log(' - 123:226 >', writes)
+    listenWrite({ writes, chatId}) {
       const uInd = writes.findIndex((id) => id === this.user.id)
-      console.log(' - uInd:247 >', uInd); // eslint-disable-line no-console
-      this.writes = writes;
       if (uInd !== -1) this.writes.splice(uInd, 1)
-      // this.writes = writes
-      console.log(' - this.writes:248 >', this.writes); // eslint-disable-line no-console
+      this.writes[`${chatId}`] = writes;
+      this.curentChatWrites = writes;
     },
-    getChatsLastMsg() {
-
+    getChatsLastMsg(chatsLastMsg) {
+      this.chatsLastMsg = chatsLastMsg
     },
     updateMsgStatus({ msg, chatId }) {
-      console.log(' - msg:245 >', (this.chatId === chatId)); // eslint-disable-line no-console
       if (this.chatId === chatId) {
         const ind = this.messages.findIndex((m)  => m.id === msg.id);
         this.messages[ind] = msg
       }
-      console.log(' - this.messages:247 >', this.messages); // eslint-disable-line no-console
     }
   },
   mounted(){
@@ -276,7 +258,7 @@ export default {
       this.$socket.emit('userGoOffline', this.user);
     }
   },
-  methods: {    
+  methods: {
     inputListener() {
       this.$socket.emit('userWriteMsg', { uId: this.user.id, chatId: this.chatId })
     },
@@ -297,9 +279,8 @@ export default {
     },
     selectChat(user) {
       this.selectedUser = user;
-      const chatId = this.userChat[user.id]
       this.$socket.emit('chatFromServer',
-        { users: [ this.user, this.selectedUser ], chatId },
+        { users: [ this.user, this.selectedUser ] },
         (response) => {
           const {chatId, msgs, usersInChat, writes} = response
           this.chatId = chatId
@@ -311,6 +292,20 @@ export default {
         // this.writes = writes
       })
       localStorage.setItem('selectedUser', JSON.stringify(this.selectedUser));
+    },
+    statusChatInMenu(user) {
+        const id = this.userChatId[`${user.id}`];
+        const msg = this.chatsLastMsg[`${id}`];
+        let text = '';
+        // if (this.writes[`${id}`]) {
+        //   text = `user is typing`;
+        // } else 
+          if (msg.text)
+            text = msg.text;
+          else
+            text = `type to ${user.name}`
+        text = (text.length < 15)? text: text.slice(0, 15) + '...'
+        return text;
     },
     selectMenu(item) {
       this.filterParams.status = (item.text === 'All')? '': item.text;
