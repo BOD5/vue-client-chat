@@ -170,12 +170,13 @@ export default {
     },
     uStatusWrite: function() {
       let res = '';
-      // if (this.curentChatWrites.length > 0) {
-      //   this.curentChatWrites.forEach((id) => {
-      //       res += `${this.usersInChat.find((u) => u.id === id).name}, `
-      //   })
-      //   res += 'is typing'
-      // }
+      if (this.curentChatWrites.length > 0) {
+        this.curentChatWrites.forEach((id) => {
+          const us = this.usersInChat.find((u) => u.id === id)
+          if (us) res += `${us.name}, `
+        })
+        res += 'is typing'
+      }
       return res;
     },
   },
@@ -278,16 +279,16 @@ export default {
       this.text = '';
     },
     selectChat(user) {
-      this.selectedUser = user;
       this.$socket.emit('chatFromServer',
-        { users: [ this.user, this.selectedUser ] },
+        { users: [ this.user, user ] },
         (response) => {
           const {chatId, msgs, usersInChat, writes} = response
           this.chatId = chatId
           this.messages = msgs
           this.usersInChat = usersInChat
+          this.selectedUser = user;
           const uInd = writes.findIndex((id) => id === this.user.id)
-          this.writes = writes;
+          this.curentChatWrites = writes;
           if (uInd !== -1) this.writes.splice(uInd, 1)
         // this.writes = writes
       })
@@ -297,10 +298,11 @@ export default {
         const id = this.userChatId[`${user.id}`];
         const msg = this.chatsLastMsg[`${id}`];
         let text = '';
-        // if (this.writes[`${id}`]) {
-        //   text = `user is typing`;
-        // } else 
-          if (msg.text)
+        console.log(' - this.writes[`${id}`]:301 >', this.writes[`${id}`]); // eslint-disable-line no-console
+        if (this.writes[`${id}`] && this.writes[`${id}`].length > 0) {
+          text = `user is typing`;
+        } else 
+          if (msg && msg.text)
             text = msg.text;
           else
             text = `type to ${user.name}`
