@@ -26,7 +26,7 @@
                   </p>
                 </div>
               </div>
-              <ul>
+              <ul id="messageBox">
                 <li
                   v-for="msg in messages"
                   :key="msg.id"
@@ -154,6 +154,7 @@ export default {
     ],
     writes: {},
     curentChatWrites: [],
+    bottomPos: false,
   }),
   computed: {
     filteredUserList: function() {
@@ -233,9 +234,12 @@ export default {
     ////
     //messages emit listeners
     getMessage({msg, chatId}) {
-      if(this.chatId === chatId)
-        this.messages.push(msg);
       this.chatsLastMsg[`${chatId}`] = msg;
+      if(this.chatId === chatId) {
+        this.messages.push(msg);
+        const el = document.getElementById('messageBox');
+        this.bottomPos = (el.scrollTop === el.scrollHeight - el.clientHeight)
+      }
     },
     listenWrite({ writes, chatId}) {
       const uInd = writes.findIndex((id) => id === this.user.id)
@@ -257,6 +261,13 @@ export default {
     // Clear the browser cache data in localStorage when closing the browser window
     window.onbeforeunload = () => {
       this.$socket.emit('userGoOffline', this.user);
+    }
+  },
+  updated() {
+    if (this.bottomPos) {
+      const el = document.getElementById('messageBox');
+      el.scrollTop = el.scrollHeight;
+      this.bottomPos = false;
     }
   },
   methods: {
@@ -298,7 +309,6 @@ export default {
         const id = this.userChatId[`${user.id}`];
         const msg = this.chatsLastMsg[`${id}`];
         let text = '';
-        console.log(' - this.writes[`${id}`]:301 >', this.writes[`${id}`]); // eslint-disable-line no-console
         if (this.writes[`${id}`] && this.writes[`${id}`].length > 0) {
           text = `user is typing`;
         } else 
@@ -321,12 +331,4 @@ export default {
 </script>
 
 <style>
-/* #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-} */
 </style>
