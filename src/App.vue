@@ -26,10 +26,15 @@
                   </p>
                 </div>
               </div>
-              <ul id="messageBox">
+              <ul 
+                id="messageBox"
+                v-on:scroll="msgScroll"
+              >
                 <li
                   v-for="msg in messages"
                   :key="msg.id"
+                  :data-id="msg.id"
+                  ref="msg"
                   :class="{ myMsg: msg.ovner.id === user.id }"
                 >
                   <div class="chat-title">
@@ -212,7 +217,6 @@ export default {
           avatar: 'https://www.imgworlds.com/wp-content/uploads/2015/12/18-CONTACTUS-HEADER.jpg',
           status: 'Online'
         }
-        // this.$socket.emit('newUser',user);
         console.log('localstorage is empty');
       } else {
         user = JSON.parse(localStorage.user);
@@ -229,7 +233,7 @@ export default {
           this.selectChat(user);
           // else localStorage.clear('selectedUser');
         }
-      });      
+      });
     },
     ////
     //messages emit listeners
@@ -239,6 +243,24 @@ export default {
         this.messages.push(msg);
         const el = document.getElementById('messageBox');
         this.bottomPos = (el.scrollTop === el.scrollHeight - el.clientHeight)
+        const arr = this.$refs.msg;
+        console.log(' - arr:247 >', arr); // eslint-disable-line no-console
+        if (arr) arr.map((e, i) => {
+          console.log(' - const pref = el.getBoundingClientRect().y:249 >', el.getBoundingClientRect().y); // eslint-disable-line no-console
+          const pref = el.getBoundingClientRect().y;
+          console.log(' - e.getBoundingClientRect().y:250 >', e.getBoundingClientRect().y); // eslint-disable-line no-console
+          if (
+            e.getBoundingClientRect().y - pref >= 0
+            &&
+            e.getBoundingClientRect().y < pref + el.clientHeight ) {
+            const msgA = this.messages[i];
+            console.log(' - msgA:254 >', msgA); // eslint-disable-line no-console
+            if (msgA.isReading === '' && msgA.ovner.id !== this.user.id) {
+              console.log(' - msgA:255 >', msgA); // eslint-disable-line no-console
+              this.$socket.emit('changeMsgStatus', {chatId: this.chatId, msgId: msgA.id})
+            }
+          }
+        })
       }
     },
     listenWrite({ writes, chatId}) {
@@ -264,13 +286,31 @@ export default {
     }
   },
   updated() {
+    const el = document.getElementById('messageBox');
+    // console.log(`y: ${el.scrollTop } y: ${el.clientHeight + el.scrollTop} `);
+    
     if (this.bottomPos) {
-      const el = document.getElementById('messageBox');
       el.scrollTop = el.scrollHeight;
       this.bottomPos = false;
     }
   },
   methods: {
+    msgScroll() {
+      const el = document.getElementById('messageBox');
+      //getBoundingClientRect()
+      const arr = this.$refs.msg;
+      if (arr) arr.map((e, i) => {
+        const pref = el.getBoundingClientRect().y;
+          if (e.getBoundingClientRect().y - pref >= 0 && e.getBoundingClientRect().y < pref + el.clientHeight){
+            const msg = this.messages[i];
+            if (msg.isReading === '' && msg.ovner.id !== this.user.id) {
+              this.$socket.emit('changeMsgStatus', {chatId: this.chatId, msgId: msg.id})
+            }
+          }
+          return;
+        }
+      );
+    },
     inputListener() {
       this.$socket.emit('userWriteMsg', { uId: this.user.id, chatId: this.chatId })
     },
