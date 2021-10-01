@@ -7,117 +7,15 @@
 
       <section>
         <div>
-          <article>
-            <div id="chat-content">
-              <div class="recipientBg maxH150">
-                <div class="col col2-1">
-                  <img
-                    :src="selectedUser.avatar"
-                    :alt="selectedUser.name"
-                    class="chat-ava"
-                  />
-                </div>
-                <div class="col col2-2">
-                  <div class="title">
-                    {{ selectedUser.name }}
-                  </div>
-                  <p class="ellipsis-4">
-                    {{ (selectedUser.name)? description + selectedUser.name : '' }}
-                  </p>
-                </div>
-              </div>
-              <ul 
-                id="messageBox"
-                v-on:scroll="msgScroll"
-              >
-                <li
-                  v-for="msg in messages"
-                  :key="msg.id"
-                  :data-id="msg.id"
-                  ref="msg"
-                  :class="{ myMsg: msg.ovner.id === user.id }"
-                >
-                  <div class="chat-title">
-                    {{ msg.ovner.name }}
-                    <span>{{ new Date(msg.created) | formatDate }}</span>
-                  </div>
-                  <div class="chat-msg">
-                    {{ msg.text }}
-                  </div>
-                  <h5>{{ reading(msg) }}</h5>
-                </li>
-              </ul>
-              <h3>{{ uStatusWrite }}</h3>
-            </div>
-            <footer>
-              
-              <div class="col col-1">
-                <input
-                  v-model="text"
-                  type="text"
-                  autofocus
-                  placeholder="Start chating!"
-                  @keyup="inputListener"
-                  @keyup.enter="sendMessage()"
-                />
-              </div>
-              <div class="col col-2">
-                <button
-                  type="submit"
-                  @click.prevent="sendMessage()"
-                >
-                Send
-                </button>
-              </div>
-            </footer>
-          </article>
-          <nav>
-            <ul class="top">
-              <li
-                v-for="item in menu"
-                :key="item.text"
-                :class="{ active: item.isSelect }"
-                @click="selectMenu(item)"
-              >
-                <a
-                >
-                  <strong>{{item.text}}</strong>
-                </a>
-              </li>
-              <!-- <li><a href="#">Chats</a></li> -->
-            </ul>
-            <ul class="list">
-              <li 
-                v-for="user in filteredUserList"
-                :key="user.id"
-                :class="{ 
-                  active: selectedUser.id === user.id,
-                  online: user.status === 'Online'
-                 }"
-                @click.prevent="selectChat(user)"
-              >
-                <a href="#"
-                >
-                  <img :src="user.avatar" :alt="user.name" />
-                  <div>
-                    <div>
-                      <strong>{{ user.name }}</strong>
-                      <div>
-                        {{ statusChatInMenu(user) }}
-                      </div>
-                    </div>
-                  </div>
-                </a>
-              </li>
-            </ul>
-            <div class="bottom">
-              <input
-                type="text"
-                v-model="filterParams.string"
-                placeholder="Search"
-              />
-            </div>
-          </nav>
+          <ChatApp v-bind="{ user, selectedUser, chatId, messages, uStatusWrite }"/>          
+          <UsersNav 
+            :user="user"
+            :users="users"
+            :userChatId="userChatId"
+            :chatsLastMsg="chatsLastMsg"
+            :writes="writes"
+            @select-user="selectUser"
+          />
         </div>
       </section>
     </main>
@@ -127,53 +25,28 @@
 <script>
 import './styles/my.css'
 import './styles/cloak.css'
+import UsersNav from './components/UsersNav.vue';
+import ChatApp from './components/ChatApp.vue';
 export default {
   name: 'App',
   components: {
+    UsersNav,
+    ChatApp
   },
   data: () => ({
     user: {},
     selectedUser: {},
     usersInChat: [],
     chatId: null,
-    chatsLastMsg: {},
     messages: [],
     users: [],
-    text: '',
-    description: 'Send message to ',
-    msgsPos: [],
-    userChatId: {},
-    filterParams: {
-      status: '',
-      string: '',
-    },
-    menu: [
-      {
-        text: 'Online',
-        isSelect: false,
-      }, 
-      {
-        text: 'All',
-        isSelect: false,
-      },
-    ],
     writes: {},
+    chatsLastMsg: {},
+    userChatId: {},
     curentChatWrites: [],
     bottomPos: false,
   }),
   computed: {
-    filteredUserList: function() {
-      const newList = this.users.filter((el) =>
-        (el.status.startsWith(this.filterParams.status)
-        &&
-        (el.id !== this.user.id)
-        &&
-        el.name.toLowerCase()
-          .includes(this.filterParams.string.toLowerCase())
-        )
-      );
-      return newList;
-    },
     uStatusWrite: function() {
       let res = '';
       if (this.curentChatWrites.length > 0) {
@@ -190,6 +63,19 @@ export default {
     connect: async function () {
       console.log('socket connected')
     },
+
+    getChat(response) {
+      const {chatId, msgs, usersInChat, writes} = response
+      this.chatId = chatId
+      this.messages = msgs
+      this.usersInChat = usersInChat
+      // this.selectedUser = user;
+      const uInd = writes.findIndex((id) => id === this.user.id)
+      this.curentChatWrites = writes;
+      if (uInd !== -1) this.writes.splice(uInd, 1)
+      localStorage.setItem('selectedUser', JSON.stringify(this.selectedUser));
+    },
+
     getUsers(usersArr) {
       this.users = usersArr.map((u) => {
         this.userChatId[`${u.user.id}`] = u.chatId
@@ -225,14 +111,14 @@ export default {
         this.user = user;
         localStorage.setItem('user', JSON.stringify(this.user));
         // shit
-        if (localStorage.selectMenu && localStorage.selectMenu !== 'null') {
-          this.selectMenu(JSON.parse(localStorage.selectMenu))
-        }
-        if (localStorage.selectedUser && localStorage.selectedUser !== 'null') {
-          const user = JSON.parse(localStorage.selectedUser);
-          this.selectChat(user);
-          // else localStorage.clear('selectedUser');
-        }
+        // if (localStorage.selectMenu && localStorage.selectMenu !== 'null') {
+        //   this.selectMenu(JSON.parse(localStorage.selectMenu))
+        // }
+        // if (localStorage.selectedUser && localStorage.selectedUser !== 'null') {
+        //   const user = JSON.parse(localStorage.selectedUser);
+        //   this.selectChat(user);
+        //   // else localStorage.clear('selectedUser');
+        // }
       });
     },
     ////
@@ -295,77 +181,9 @@ export default {
     }
   },
   methods: {
-    msgScroll() {
-      const el = document.getElementById('messageBox');
-      //getBoundingClientRect()
-      const arr = this.$refs.msg;
-      if (arr) arr.map((e, i) => {
-        const pref = el.getBoundingClientRect().y;
-          if (e.getBoundingClientRect().y - pref >= 0 && e.getBoundingClientRect().y < pref + el.clientHeight){
-            const msg = this.messages[i];
-            if (msg.isReading === '' && msg.ovner.id !== this.user.id) {
-              this.$socket.emit('changeMsgStatus', {chatId: this.chatId, msgId: msg.id})
-            }
-          }
-          return;
-        }
-      );
-    },
-    inputListener() {
-      this.$socket.emit('userWriteMsg', { uId: this.user.id, chatId: this.chatId })
-    },
-    reading(msg) {
-      if(this.user) {
-        if (msg.isReading !== '' && msg.ovner.id === this.user.id)
-          return `seen: ${msg.isReading}`
-      }
-      return '';
-    },
-    sendMessage()  {
-      const newMsg = {
-        text: this.text,
-        ovner: this.user,
-      }
-      this.$socket.emit('messageToServer', { msg: newMsg, chatId: this.chatId })
-      this.text = '';
-    },
-    selectChat(user) {
-      this.$socket.emit('chatFromServer',
-        { users: [ this.user, user ] },
-        (response) => {
-          const {chatId, msgs, usersInChat, writes} = response
-          this.chatId = chatId
-          this.messages = msgs
-          this.usersInChat = usersInChat
-          this.selectedUser = user;
-          const uInd = writes.findIndex((id) => id === this.user.id)
-          this.curentChatWrites = writes;
-          if (uInd !== -1) this.writes.splice(uInd, 1)
-        // this.writes = writes
-      })
-      localStorage.setItem('selectedUser', JSON.stringify(this.selectedUser));
-    },
-    statusChatInMenu(user) {
-        const id = this.userChatId[`${user.id}`];
-        const msg = this.chatsLastMsg[`${id}`];
-        let text = '';
-        if (this.writes[`${id}`] && this.writes[`${id}`].length > 0) {
-          text = `user is typing`;
-        } else 
-          if (msg && msg.text)
-            text = msg.text;
-          else
-            text = `type to ${user.name}`
-        text = (text.length < 15)? text: text.slice(0, 15) + '...'
-        return text;
-    },
-    selectMenu(item) {
-      this.filterParams.status = (item.text === 'All')? '': item.text;
-      this.menu.forEach((el) => {
-          el.isSelect = (item.text === el.text)? true : false
-        })
-      localStorage.setItem('selectMenu', JSON.stringify(item));
-    },
+    selectUser(user) {
+      this.selectedUser = user;
+    }
   },
 }
 </script>

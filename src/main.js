@@ -15,7 +15,7 @@ Vue.filter('formatDate', (d) => {
 
 Vue.use(new VueSocketIO({
   debug: true,
-  connection: `http://192.168.7.49:5000/chat`,
+  connection: `http://192.168.7.44:5000/chat`,
 }))
 
 Vue.config.productionTip = false
