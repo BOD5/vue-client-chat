@@ -8,7 +8,7 @@
       :key="msg.id"
       :data-id="msg.id"
       ref="msg"
-      :class="{ myMsg: msg.ovner.id === user.id }"
+      :class="{ myMsg: msg.ovner.id === $store.state.user.id }"
     >
       <div class="chat-title">
         {{ msg.ovner.name }}
@@ -24,31 +24,25 @@
 
 <script>
 export default {
-  props: {
-    messages: {
-      type: Array,
-      default: () => ([]),
-    },
-    user: {
-      type: Object,
-      default: () => ({}),
-    },
-    chatId: {
-      type: Number,
-      default: () => (-1),
-    },
-  },
   data: () => ({
-
+    bottomPos: false,
   }),
-  updated() {
-    // console.log(' - :36 >', this.messagesArray); // eslint-disable-line no-console
-  },
   computed: {
-    // messages: function() {
-    //   console.log(' - :37 >', this.messagesArray); // eslint-disable-line no-console
-    //   return this.messagesArray;
-    // }
+    messages() {
+      return this.$store.state.messages;
+    }
+  },
+  watch: {
+    messages() {
+
+    },
+  },
+  updated() {
+    const el = document.getElementById('messageBox');
+    if (this.bottomPos) {
+      el.scrollTop = el.scrollHeight;
+      this.bottomPos = false;
+    }
   },
   methods: {
     reading(msg) {
@@ -67,7 +61,7 @@ export default {
           if (e.getBoundingClientRect().y - pref >= 0 && e.getBoundingClientRect().y < pref + el.clientHeight){
             const msg = this.messages[i];
             if (msg.isReading === '' && msg.ovner.id !== this.user.id) {
-              this.$socket.emit('changeMsgStatus', {chatId: this.chatId, msgId: msg.id})
+              this.$socket.emit('changeMsgStatus', {chatId: this.$store.state.chatId, msgId: msg.id})
             }
           }
           return;
@@ -76,7 +70,34 @@ export default {
     },
   }
 }
+// getMessage({msg, chatId}) {
+//       this.chatsLastMsg[`${chatId}`] = msg;
+//       if(this.chatId === chatId) {
+//         this.messages.push(msg);
+//         const el = document.getElementById('messageBox');
+//         this.bottomPos = (el.scrollTop === el.scrollHeight - el.clientHeight)
+//         const arr = this.$refs.msg;
+//         console.log(' - arr:247 >', arr); // eslint-disable-line no-console
+//         if (arr) arr.map((e, i) => {
+//           console.log(' - const pref = el.getBoundingClientRect().y:249 >', el.getBoundingClientRect().y); // eslint-disable-line no-console
+//           const pref = el.getBoundingClientRect().y;
+//           console.log(' - e.getBoundingClientRect().y:250 >', e.getBoundingClientRect().y); // eslint-disable-line no-console
+//           if (
+//             e.getBoundingClientRect().y - pref >= 0
+//             &&
+//             e.getBoundingClientRect().y < pref + el.clientHeight ) {
+//             const msgA = this.messages[i];
+//             console.log(' - msgA:254 >', msgA); // eslint-disable-line no-console
+//             if (msgA.isReading === '' && msgA.ovner.id !== this.user.id) {
+//               console.log(' - msgA:255 >', msgA); // eslint-disable-line no-console
+//               this.$socket.emit('changeMsgStatus', {chatId: this.chatId, msgId: msgA.id})
+//             }
+//           }
+//         })
+//       }
+//     },
 </script>
+
 
 <style>
 

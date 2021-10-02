@@ -12,7 +12,7 @@
         {{ selectedUser.name }}
       </div>
       <p class="ellipsis-4">
-        {{ (selectedUser.name)? description + selectedUser.name : '' }}
+        {{ description }}
       </p>
     </div>
   </div>
@@ -20,15 +20,12 @@
 
 <script>
 export default {
-  props: {
-    selectedUser: {
-      type: Object,
-      default: () => ({}),
-    }
-  },
   data: () => ({
   }),
   computed: {
+    selectedUser() {
+      return this.$store.state.selectedUser;
+    },
     description() {
       return (this.selectedUser.name)? `Send message to ${this.selectedUser.name}` : 'Select user to send message';
     }

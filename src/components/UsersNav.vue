@@ -30,32 +30,6 @@
 <script>
 import UsersList from './UsersList'
 export default {
-  props: {
-    user: {
-      type: Object,
-      default: () => ({})
-    },
-    // selectedUser: {
-    //   type: Object,
-    //   default: () => ({})
-    // },
-    users: {
-      type: Array,
-      default: () => [],
-    },
-    userChatId: {
-      type: Object,
-      default: () =>  ({}),
-    },
-    chatsLastMsg: {
-      type: Object,
-      default: () =>  ({}),
-    },
-    writes: {
-      type: Object,
-      default: () =>  ({}),
-    },
-  },
   components: {
     UsersList,
   },
@@ -76,8 +50,11 @@ export default {
     },
   }),
   computed: {
+    user() {
+      return this.$store.state.user;
+    },
     filteredUserList: function() {
-      const newList = this.users.filter((el) =>
+      const newList = this.$store.state.users.filter((el) =>
         el
         &&
         (el.status.startsWith(this.filterParams.status)

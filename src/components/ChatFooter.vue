@@ -23,32 +23,30 @@
 
 <script>
 export default {
-  props: {
-    user: {
-      type: Object,
-      default: -1,
-    },
-    chatId: {
-      type: Number,
-      default : -1,
-    }
-  },
   data: () => ({
     text: '',
   }),
-  updated() {
-    console.log(' - props:49 >', this.user.id); // eslint-disable-line no-console
-  },
   methods: {
     inputListener() {
-      this.$socket.emit('userWriteMsg', { uId: this.user.id, chatId: this.chatId })
+      console.log('tee', {
+        uId: this.$store.state.user.id,
+        chatId: this.$store.state.chatId
+      })
+      this.$socket.emit('userWriteMsg', {
+        uId: this.$store.state.user.id,
+        chatId: this.$store.state.chatId
+      })
     },
     sendMessage()  {
       const newMsg = {
         text: this.text,
-        ovner: this.user,
+        ovner: this.$store.state.user,
       }
-      this.$socket.emit('messageToServer', { msg: newMsg, chatId: this.chatId })
+      console.log(' - newMsg:44 >', newMsg); // eslint-disable-line no-console
+      this.$socket.emit('messageToServer', {
+        msg: newMsg,
+        chatId: this.$store.state.chatId
+      })
       this.text = '';
     },
   },

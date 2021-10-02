@@ -28,57 +28,20 @@
 <script>
 export default {
   props: {
-    users: {
-      type: Array,
-      default: () => ([]),
-    },
-    user: {
-      type: Object,
-      default: () => ({}),
-    },
-    selectedUser: {
-      type: Object,
-      default: () => ({})
-    },
-    userChatId: {
-      type: Object,
-      default: () => ({}),
-    },
-    chatsLastMsg: {
-      type: Object,
-      default: () => ({}),
-    },
-    writes: {
-      type: Object,
-      default: () => ({}),
-    },
   },
-  emits: ['select-user'],
   methods: {
     selectChat(user) {
       this.$socket.emit('chatFromServer', {
-        users: [ this.user, user ],
+        users: [ this.$store.state.user, user ],
       })
-      this.$emit('select-user', user)
-        // (response) => {
-        //   const {chatId, msgs, usersInChat, writes} = response
-        //   this.chatId = chatId
-        //   this.messages = msgs
-        //   this.usersInChat = usersInChat
-        //   this.selectedUser = user;
-        //   const uInd = writes.findIndex((id) => id === this.user.id)
-        //   this.curentChatWrites = writes;
-        //   if (uInd !== -1) this.writes.splice(uInd, 1)
-        // this.writes = writes
-      // })
-      // localStorage.setItem('selectedUser', JSON.stringify(this.selectedUser));
+      this.$store.dispatch('selectUser', user);
     },
     statusChatInMenu(user) {
       const id = this.userChatId[`${user.id}`];
       const msg = this.chatsLastMsg[`${id}`];
       let text = '';
       if (this.writes[`${id}`] && this.writes[`${id}`].length > 0) {
-        text = `user is typing`;
+        text = `user is typing...`;
       } else 
         if (msg && msg.text)
           text = msg.text;
@@ -86,6 +49,24 @@ export default {
           text = `type to ${user.name}`
       text = (text.length < 15)? text: text.slice(0, 15) + '...'
       return text;
+    },
+  },
+  computed: {
+    selectedUser() {
+      return this.$store.state.selectedUser;
+    },
+    userChatId() {
+      return this.$store.state.userChatId;
+    },
+    chatsLastMsg() {
+      return this.$store.state.chatsLastMsg;
+    },
+    writes() {
+      return this.$store.state.writes;
+    },
+    users() {
+      console.log(' - users:63 >', this.$store.getters.getUsers); // eslint-disable-line no-console
+      return this.$store.getters.getUsers;
     },
   },
 }

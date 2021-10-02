@@ -1,8 +1,8 @@
 <template>
   <article>
     <div id="chat-content">
-      <ChatHeader v-bind="{ selectedUser }" @select-user="selectedUser" />
-      <MessageList v-bind="{ user, chatId, messages }" />
+      <ChatHeader />
+      <MessageList />
       <h3>{{ uStatusWrite }}</h3>
       </div>
     <ChatFooter v-bind="{user, chatId}"/>
